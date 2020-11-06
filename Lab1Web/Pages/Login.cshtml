@@ -1,0 +1,24 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "登录";
+}
+
+<div class="text-center">
+    <h1 class="display-4">欢迎</h1>
+    <p>欢迎使用HCGProxy，在使用前需要登录</p>
+</div>
+
+<form method="post">
+    <div class="form-group">
+        <label asp-for="UserName">用户名</label>
+        <input type="text" class="form-control" asp-for="UserName" id="userName">
+        <span asp-validation-for="UserName"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Token">密码</label>
+        <input type="password" class="form-control" asp-for="Token" id="token">
+        <span asp-validation-for="Token"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">提交</button>
+</form>

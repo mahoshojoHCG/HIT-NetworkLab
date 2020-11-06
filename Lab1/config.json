@@ -1,0 +1,21 @@
+{
+  "BindAddress": ["0.0.0.0"],
+  "Port": 66,
+  "LoginPage": "http://127.0.0.1:5000/Login",
+  "BlockedPage": "http://127.0.0.1:5000/Blocked",
+  "ApiBase": "http://127.0.0.01:5000",
+  "Users": [
+    {
+      "UserName": "bar",
+      "Token": "1234",
+      "BlockList": ["hit.edu.cn"],
+      "AllowList": ["today.hit.edu.cn"]
+    },
+    {
+      "UserName": "foo",
+      "Token": "123456",
+      "BlockList": [],
+      "AllowList": []
+    }
+  ]
+}

@@ -76,7 +76,7 @@ namespace Lab23Server
                                     ResultCode = 200
                                 })));
                             _logger.LogInformation($"File {header.FileName} begin transfer.");
-                            var buffer = new byte[20480];
+                            var buffer = new byte[2048];
                             var read = 0L;
                             while (read < file.Length)
                             {

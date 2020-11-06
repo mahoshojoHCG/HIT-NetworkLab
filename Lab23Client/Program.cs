@@ -16,7 +16,8 @@ namespace Lab23Client
     {
         public enum Proto
         {
-            StopAndWait
+            StopAndWait,
+            SelectiveRepeat
         }
         public class Options
         {
@@ -26,7 +27,7 @@ namespace Lab23Client
             [Option('g', "get", HelpText = "Get file from server.")]
             public string Get { get; set; }
 
-            [Option('p', "proto", Default = Proto.StopAndWait, HelpText = "Use stop and wait proto.")]
+            [Option('p', "proto", Default = Proto.SelectiveRepeat, HelpText = "Use stop and wait proto.")]
             public Proto Proto { get; set; }
 
             [Option("server", Required = true, HelpText = "Remote address of server.")]
@@ -42,6 +43,9 @@ namespace Lab23Client
                 {
                     case Proto.StopAndWait:
                         services.AddStopAndWait();
+                        break;
+                    case Proto.SelectiveRepeat:
+                        services.AddSelectiveRepeat();
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -79,5 +83,9 @@ namespace Lab23Client
         {
             return service.AddSingleton(typeof(IUdpProtoClient), typeof(StopAndWaitClient));
         }
+        static IServiceCollection AddSelectiveRepeat(this IServiceCollection service)
+            => service.AddSingleton(typeof(SelectiveRepeatClient))
+                .AddTransient<IUdpProtoClient>(
+                    provider => provider.GetService<SelectiveRepeatClient>());
     }
 }

@@ -61,6 +61,8 @@ namespace Lab23
                     await Task.Delay(10);
                 }
             }
+
+            public bool TransferCompleted => true;
         }
 
         public bool Connected => UdpClient != null;

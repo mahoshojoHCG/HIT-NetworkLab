@@ -93,5 +93,7 @@ namespace Lab23
                 await Task.Delay(500);
             }
         }
+
+        public bool TransferCompleted => true;
     }
 }

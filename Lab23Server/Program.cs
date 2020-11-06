@@ -25,7 +25,7 @@ namespace Lab23Server
             services.AddSingleton(root);
             services.AddSingleton<IConfiguration>(root);
             services.AddLogging(b => b.AddConsole());
-            services.AddStopAndWait();
+            services.AddSelectiveRepeat();
             services.AddSingleton(typeof(FileTransferServer));
             await using var provider = services.BuildServiceProvider();
             var server = provider.GetService<FileTransferServer>();
@@ -36,6 +36,10 @@ namespace Lab23Server
             => service.AddSingleton(typeof(StopAndWaitServer))
                       .AddTransient<IUdpProtoServer>(
                           provider => provider.GetService<StopAndWaitServer>());
+        static IServiceCollection AddSelectiveRepeat(this IServiceCollection service)
+            => service.AddSingleton(typeof(SelectiveRepeatServer))
+                .AddTransient<IUdpProtoServer>(
+                    provider => provider.GetService<SelectiveRepeatServer>());
 
 
     }

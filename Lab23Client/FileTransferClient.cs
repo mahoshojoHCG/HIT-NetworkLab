@@ -37,6 +37,11 @@ namespace Lab23Client
                     FileName = file.Name,
                     ContentLength = file.Length
                 })));
+            //Waiting to complete
+            while (!_client.TransferCompleted)
+            {
+
+            }
             _logger.LogInformation("File confirmed, transfer start.");
             var sent = 0L;
             var buffer = new byte[2048];
@@ -49,6 +54,11 @@ namespace Lab23Client
                     await _client.SendAsync(buffer);
                 _logger.LogInformation($"{sent} bytes sent, total {file.Length}.");
                 sent += read;
+            }
+            //Waiting to complete
+            while (!_client.TransferCompleted)
+            {
+                
             }
         }
 

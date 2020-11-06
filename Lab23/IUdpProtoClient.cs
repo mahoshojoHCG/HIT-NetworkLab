@@ -13,6 +13,7 @@ namespace Lab23
         public ValueTask ConnectAsync(IPEndPoint endPoint);
         public Task<byte[]> ReceiveAsync();
         public ValueTask SendAsync(byte[] buffer);
+        public bool TransferCompleted { get; }
     }
 
     public interface IUdpProtoServer
@@ -20,5 +21,6 @@ namespace Lab23
         public bool Connected { get; }
         public ValueTask BindAsync(IPEndPoint endPoint);
         public Task<IUdpProtoClient> ListenAsync();
+        
     }
 }

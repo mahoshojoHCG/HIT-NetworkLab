@@ -81,7 +81,7 @@ namespace Lab23
                     await Task.Delay(1);
                 }
             }).GetAwaiter();
-            for (var i = 0; i < 500; i++)
+            for (var i = 0; i < 1000; i++)
             {
                 if (!receive.IsCompleted)
                     await Task.Delay(1);

@@ -164,7 +164,7 @@ namespace Lab23
                                     while (true)
                                     {
                                         //Wait 500 ms to retry.
-                                        for (var i = 0; i < 500; i++)
+                                        for (var i = 0; i < 1000; i++)
                                         {
                                             await Task.Delay(1);
                                             if (!HavePendingSend[enp])

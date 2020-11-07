@@ -22,7 +22,7 @@ namespace Lab23Server
             services.AddSingleton(root);
             services.AddSingleton<IConfiguration>(root);
             services.AddLogging(b => b.AddConsole());
-            if (root.GetSection("UseSelectiveRepeat").Get<bool?>() != false)
+            if (root["UseSelectiveRepeat"] != "false")
                 services.AddSelectiveRepeat();
             else
                 services.AddStopAndWait();

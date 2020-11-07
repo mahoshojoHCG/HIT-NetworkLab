@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Lab23
 {
@@ -14,6 +15,11 @@ namespace Lab23
         private ConcurrentBag<bool> OKs { get; } = new ConcurrentBag<bool>();
         public bool Connected { get; private set; }
 
+        private readonly ILogger _logger;
+        public StopAndWaitClient(ILogger<StopAndWaitClient> logger)
+        {
+            _logger = logger;
+        }
         public async ValueTask ConnectAsync(IPEndPoint endPoint)
         {
             if (!Connected)
@@ -75,6 +81,7 @@ namespace Lab23
             {
                 //Re transfer
                 await UdpClient.SendAsync(data, data.Length);
+                _logger.LogError("Packet lost, resending.");
                 await Task.Delay(500);
             }
         }

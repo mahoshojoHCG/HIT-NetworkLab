@@ -26,7 +26,6 @@ namespace Lab23Server
                 services.AddSelectiveRepeat();
             else
                 services.AddStopAndWait();
-            services.AddSelectiveRepeat();
             services.AddSingleton(typeof(FileTransferServer));
             await using var provider = services.BuildServiceProvider();
             var server = provider.GetService<FileTransferServer>();

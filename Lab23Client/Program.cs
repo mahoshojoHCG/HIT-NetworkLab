@@ -27,7 +27,7 @@ namespace Lab23Client
             [Option('g', "get", HelpText = "Get file from server.")]
             public string Get { get; set; }
 
-            [Option('p', "proto", Default = Proto.SelectiveRepeat, HelpText = "Use stop and wait proto.")]
+            [Option('p', "proto", Default = Proto.SelectiveRepeat, HelpText = "Proto to use.")]
             public Proto Proto { get; set; }
 
             [Option("server", Required = true, HelpText = "Remote address of server.")]

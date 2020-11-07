@@ -40,7 +40,7 @@ namespace Lab23Client
             //Waiting to complete
             while (!_client.TransferCompleted)
             {
-
+                
             }
             _logger.LogInformation("File confirmed, transfer start.");
             var sent = 0L;
@@ -56,9 +56,11 @@ namespace Lab23Client
                 sent += read;
             }
             //Waiting to complete
+            await Task.Delay(10);
+
             while (!_client.TransferCompleted)
             {
-                
+                await Task.Delay(10);
             }
         }
 

@@ -176,7 +176,7 @@ namespace Lab23
                             if (route.CurrentReceiveNamespace == 0)
                                 ack[2] = buffer[2];
                             else
-                                ack[1] = ack[1];
+                                ack[1] = buffer[1];
                             _logger.LogInformation(
                                 $"Received a resent packet of last namespace from {receive.RemoteEndPoint}");
                             //Directly resend ack

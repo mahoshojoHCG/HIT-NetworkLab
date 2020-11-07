@@ -125,6 +125,8 @@ namespace Lab23
                         {
                             await Task.Delay(10);
                         }
+
+                        TransferCompleted = false;
                         //Sleep 10 ms to make the window larger
                         await Task.Delay(10);
                         //Stop to accept 
@@ -216,7 +218,6 @@ namespace Lab23
                         WaitingForConfirmReceive.Clear();
                         CurrentReceiveWindowSize = 0;
                         _logger.LogInformation("Receive window switched.");
-                        TransferCompleted = true;
                     }
                 }));
             }

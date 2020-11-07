@@ -1,5 +1,6 @@
 {
-  "EndPoint" : "0.0.0.0:2222",
+  "EndPoint": "0.0.0.0:2222",
   "Method": "StopAndWait",
-  "BaseDirectory": "./Files"
+  "BaseDirectory": "./Files",
+  "UseSelectiveRepeat": true
 }

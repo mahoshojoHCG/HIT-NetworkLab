@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -15,13 +13,12 @@ namespace Lab23Server
 {
     public class FileTransferServer
     {
-        private readonly ILogger _logger;
         private readonly IConfiguration _configuration;
+        private readonly ILogger _logger;
         private readonly IUdpProtoServer _server;
-        public IPEndPoint EndPoint { get; }
-        private Queue<Task> Tasks { get; } = new Queue<Task>();
-        public string BaseDirectory { get; }
-        public FileTransferServer(ILogger<FileTransferServer> logger, IConfiguration configuration, IUdpProtoServer server)
+
+        public FileTransferServer(ILogger<FileTransferServer> logger, IConfiguration configuration,
+            IUdpProtoServer server)
         {
             _logger = logger;
             _configuration = configuration;
@@ -35,6 +32,10 @@ namespace Lab23Server
             BaseDirectory = Path.GetFullPath(configuration["BaseDirectory"]);
             EndPoint = endPoint;
         }
+
+        public IPEndPoint EndPoint { get; }
+        private Queue<Task> Tasks { get; } = new Queue<Task>();
+        public string BaseDirectory { get; }
 
         public async ValueTask RunAsync()
         {
@@ -59,22 +60,23 @@ namespace Lab23Server
                                 _logger.LogInformation($"File {header.FileName} not found.");
                                 await client.SendAsync(Encoding.UTF8.GetBytes(
                                     JsonSerializer.Serialize(header with
-                                    {
+                                        {
                                         Method = "RESULT",
                                         ContentLength = 0,
                                         ResultCode = 404
-                                    })));
+                                        })));
                                 continue;
                             }
+
                             //Send file by part
                             var file = new FileStream(Path.Combine(BaseDirectory, header.FileName), FileMode.Open);
                             await client.SendAsync(Encoding.UTF8.GetBytes(
                                 JsonSerializer.Serialize(header with
-                                {
+                                    {
                                     Method = "RESULT",
                                     ContentLength = file.Length,
                                     ResultCode = 200
-                                })));
+                                    })));
                             _logger.LogInformation($"File {header.FileName} begin transfer.");
                             var buffer = new byte[2048];
                             var read = 0L;
@@ -87,6 +89,7 @@ namespace Lab23Server
                                     await client.SendAsync(buffer[..result]);
                                 read += result;
                             }
+
                             _logger.LogInformation($"File {header.FileName} transfer completed.");
                         }
                         //Upload file
@@ -100,9 +103,11 @@ namespace Lab23Server
                                 await ms.WriteAsync(received);
                                 read += received.LongLength;
                             }
+
                             //Seek to receive
                             ms.Seek(0, SeekOrigin.Begin);
-                            await using var file = new FileStream(Path.Combine(BaseDirectory, header.FileName), FileMode.Create);
+                            await using var file = new FileStream(Path.Combine(BaseDirectory, header.FileName),
+                                FileMode.Create);
                             await ms.CopyToAsync(file);
                             await file.FlushAsync();
                         }

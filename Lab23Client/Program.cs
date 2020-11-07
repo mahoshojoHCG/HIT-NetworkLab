@@ -2,38 +2,23 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using CommandLine;
 using Lab23;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Lab23Client
 {
-    static class Program
+    internal static class Program
     {
         public enum Proto
         {
             StopAndWait,
             SelectiveRepeat
         }
-        public class Options
-        {
-            [Option('s', "send", HelpText = "Send file to server.")]
-            public string Send { get; set; }
 
-            [Option('g', "get", HelpText = "Get file from server.")]
-            public string Get { get; set; }
-
-            [Option('p', "proto", Default = Proto.SelectiveRepeat, HelpText = "Proto to use.")]
-            public Proto Proto { get; set; }
-
-            [Option("server", Required = true, HelpText = "Remote address of server.")]
-            public string EndPoint { get; set; }
-        }
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             await Parser.Default.ParseArguments<Options>(args).WithParsedAsync(async options =>
             {
@@ -57,7 +42,7 @@ namespace Lab23Client
                 var client = provider.GetService<FileTransferClient>();
                 var logger = provider.GetService<ILogger<FileTransferClient>>();
                 await client.ConnectAsync(IPEndPoint.Parse(options.EndPoint));
-                if (options.Get is { Length: > 0 })
+                if (options.Get is {Length: > 0})
                 {
                     var sw = new Stopwatch();
                     sw.Start();
@@ -67,7 +52,7 @@ namespace Lab23Client
                     logger.LogInformation($"File transfer took {sw.Elapsed}.");
                 }
 
-                if (options.Send is { Length: > 0 })
+                if (options.Send is {Length: > 0})
                 {
                     var sw = new Stopwatch();
                     sw.Start();
@@ -79,13 +64,31 @@ namespace Lab23Client
             });
         }
 
-        static IServiceCollection AddStopAndWait(this IServiceCollection service)
+        private static IServiceCollection AddStopAndWait(this IServiceCollection service)
         {
             return service.AddSingleton(typeof(IUdpProtoClient), typeof(StopAndWaitClient));
         }
-        static IServiceCollection AddSelectiveRepeat(this IServiceCollection service)
-            => service.AddSingleton(typeof(SelectiveRepeatClient))
+
+        private static IServiceCollection AddSelectiveRepeat(this IServiceCollection service)
+        {
+            return service.AddSingleton(typeof(SelectiveRepeatClient))
                 .AddTransient<IUdpProtoClient>(
                     provider => provider.GetService<SelectiveRepeatClient>());
+        }
+
+        public class Options
+        {
+            [Option('s', "send", HelpText = "Send file to server.")]
+            public string Send { get; set; }
+
+            [Option('g', "get", HelpText = "Get file from server.")]
+            public string Get { get; set; }
+
+            [Option('p', "proto", Default = Proto.SelectiveRepeat, HelpText = "Proto to use.")]
+            public Proto Proto { get; set; }
+
+            [Option("server", Required = true, HelpText = "Remote address of server.")]
+            public string EndPoint { get; set; }
+        }
     }
 }

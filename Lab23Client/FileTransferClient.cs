@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -15,6 +12,7 @@ namespace Lab23Client
     {
         private readonly IUdpProtoClient _client;
         private readonly ILogger _logger;
+
         public FileTransferClient(IUdpProtoClient client, ILogger<FileTransferClient> logger)
         {
             _client = client;
@@ -40,8 +38,8 @@ namespace Lab23Client
             //Waiting to complete
             while (!_client.TransferCompleted)
             {
-                
             }
+
             _logger.LogInformation("File confirmed, transfer start.");
             var sent = 0L;
             var buffer = new byte[2048];
@@ -55,13 +53,11 @@ namespace Lab23Client
                 _logger.LogInformation($"{sent} bytes sent, total {file.Length}.");
                 sent += read;
             }
+
             //Waiting to complete
             await Task.Delay(10);
 
-            while (!_client.TransferCompleted)
-            {
-                await Task.Delay(10);
-            }
+            while (!_client.TransferCompleted) await Task.Delay(10);
         }
 
         public async ValueTask GetFileAsync(string requireFileName)
@@ -78,6 +74,7 @@ namespace Lab23Client
                 _logger.LogError($"Server return error value {result.ResultCode}");
                 return;
             }
+
             _logger.LogInformation("File confirmed, transfer start.");
             var byteReceived = 0L;
             await using var ms = new MemoryStream();

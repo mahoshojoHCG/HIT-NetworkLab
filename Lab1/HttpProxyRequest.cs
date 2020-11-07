@@ -4,8 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -95,48 +93,33 @@ namespace Lab1
             //Add X-Forwarded-For
             message.Headers.Add("X-Forwarded-For", address.ToString());
             //Check if no cache allowed
+            var cached =
+                from cache
+                    in Context.Caches
+                where cache.CacheId == key && cache.ExpireTime > DateTime.Now
+                select cache;
             if (message.Headers.CacheControl?.NoStore != true)
             {
                 _logger.LogInformation("Cache allowed, now verifying fresh.");
-                var cached =
-                    from cache
-                        in Context.Caches
-                    where cache.CacheId == key && cache.ExpireTime > DateTime.Now
-                    select cache;
 
                 if (cached.Any())
-                {
-                    //Cache presented
-                    var cache = cached.First();
                     //Verify first
-                    var verifyMessage = new HttpRequestMessage(Method, RequestUri);
-                    verifyMessage.Headers.IfModifiedSince = cache.CachedTime;
-                    verifyMessage.Headers.UserAgent.Add(new ProductInfoHeaderValue(
-                        "HCGProxy",
-                        Assembly.GetExecutingAssembly().GetName().Version.ToString()));
-                    var verify = Client.Send(verifyMessage);
-                    //304 and 200 is both OK in standard
-                    if (verify.StatusCode == HttpStatusCode.NotModified ||
-                        verify.StatusCode == HttpStatusCode.OK)
-                    {
-                        _logger.LogInformation("Cache verified successful, using cache.");
-                        //Use cache
-                        ms.Write(cache.Content);
-                        return ms.ToArray();
-                    }
-
-                    _logger.LogWarning("Database content is not refresh, removing.");
-                    Context.Caches.Remove(cache);
-                    Context.SaveChanges();
-                }
-                else
-                {
-                    _logger.LogInformation("No fresh cache present.");
-                }
+                    message.Headers.IfModifiedSince = cached.First().CachedTime;
             }
 
             //No cache used
             Response = Client.Send(message);
+            //304, cache allowed
+            if (Response.StatusCode == HttpStatusCode.NotModified)
+            {
+                _logger.LogInformation("Cache verified successful, using cache.");
+                //Use cache
+                if (cached.Any())
+                {
+                    ms.Write(cached.First().Content);
+                    return ms.ToArray();
+                }
+            }
 
             var responseHeader = Encoding.ASCII.GetBytes(Response.Headers.ToString());
             var contentHeader = Encoding.ASCII.GetBytes(Response.Content.Headers.ToString());
@@ -163,14 +146,14 @@ namespace Lab1
                     //Create a new thread to write cache
                     Task.Run(async () =>
                     {
-                        var cached =
+                        var caches =
                             from c
                                 in Context.Caches
                             where c.CacheId == key
                             select c;
                         //Check and remove old expired
-                        if (cached.Any())
-                            Context.Caches.Remove(cached.First());
+                        if (caches.Any())
+                            Context.Caches.Remove(caches.First());
                         var cache = new Cache
                         {
                             CacheId = key,

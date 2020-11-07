@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -13,18 +10,24 @@ namespace Lab23
 {
     public class SelectiveRepeatClient : IUdpProtoClient
     {
-        public bool Connected { get; private set; }
+        private readonly ILogger _logger;
+
+        public SelectiveRepeatClient(ILogger<SelectiveRepeatClient> logger)
+        {
+            _logger = logger;
+        }
+
         private UdpClient UdpClient { get; } = new UdpClient();
         internal ConcurrentQueue<byte[]> PendingSend { get; } = new ConcurrentQueue<byte[]>();
         internal ConcurrentQueue<byte[]> PendingReceive { get; } = new ConcurrentQueue<byte[]>();
 
         /// <summary>
-        /// Marks to stop accept more window.
+        ///     Marks to stop accept more window.
         /// </summary>
         internal bool StopAccept { get; set; }
 
         /// <summary>
-        /// If the buffer is full and window can't be larger.
+        ///     If the buffer is full and window can't be larger.
         /// </summary>
         private bool BufferFull => PendingSend.Count >= 254 || StopAccept;
 
@@ -33,16 +36,16 @@ namespace Lab23
         private int CurrentReceiveNamespace { get; set; }
         private byte CurrentReceiveWindowSize { get; set; }
         private byte CurrentSendWindowSize { get; set; }
+
         private ConcurrentDictionary<byte, byte[]> WaitingForConfirmReceive { get; } =
             new ConcurrentDictionary<byte, byte[]>();
+
         private ConcurrentDictionary<byte, bool> PendingAck { get; } =
             new ConcurrentDictionary<byte, bool>();
+
         private ConcurrentBag<Task> Tasks { get; } = new ConcurrentBag<Task>();
-        private ILogger _logger;
-        public SelectiveRepeatClient(ILogger<SelectiveRepeatClient> logger)
-        {
-            _logger = logger;
-        }
+        public bool Connected { get; private set; }
+
         public async ValueTask ConnectAsync(IPEndPoint endPoint)
         {
             await Task.FromResult(0);
@@ -66,12 +69,12 @@ namespace Lab23
                             //This is a resend of last namespace
                             if (buffer[CurrentReceiveNamespace + 1] == 0)
                             {
-                                var ack = new byte[] { 1, 0, 0, buffer[3] };
+                                var ack = new byte[] {1, 0, 0, buffer[3]};
                                 //Resend ack is from the other namespace
                                 if (CurrentReceiveNamespace == 0)
                                     ack[2] = buffer[2];
                                 else
-                                    ack[1] = ack[1];
+                                    ack[1] = buffer[1];
                                 _logger.LogInformation(
                                     $"Received a resent packet of last namespace from {receive.RemoteEndPoint}");
                                 //Directly resend ack
@@ -90,11 +93,10 @@ namespace Lab23
                                     $"Received a packet #{groupNumber} of last namespace from " +
                                     $"{receive.RemoteEndPoint}, widow size is {CurrentReceiveWindowSize}");
                                 //Send ack
-                                var ack = new byte[] { 1, 0, 0, buffer[3] };
+                                var ack = new byte[] {1, 0, 0, buffer[3]};
                                 ack[CurrentReceiveNamespace + 1] = groupNumber;
                                 await UdpClient.SendAsync(ack, 4);
                             }
-
                         }
 
                         //Ack
@@ -121,10 +123,7 @@ namespace Lab23
                 {
                     while (true)
                     {
-                        while (PendingSend.IsEmpty)
-                        {
-                            await Task.Delay(10);
-                        }
+                        while (PendingSend.IsEmpty) await Task.Delay(10);
 
                         TransferCompleted = false;
                         //Sleep 10 ms to make the window larger
@@ -132,10 +131,10 @@ namespace Lab23
                         //Stop to accept 
                         StopAccept = true;
                         //Mark the window size
-                        CurrentSendWindowSize = (byte)PendingSend.Count;
+                        CurrentSendWindowSize = (byte) PendingSend.Count;
                         _logger.LogInformation($"New window with size {CurrentSendWindowSize}");
                         //Constructs 4 byte header
-                        var header = new byte[] { 0, 0, 0, CurrentSendWindowSize };
+                        var header = new byte[] {0, 0, 0, CurrentSendWindowSize};
                         //The number of the packet, starting from 1
                         byte number = 1;
                         var sendTasks = new Queue<Task>();
@@ -164,6 +163,7 @@ namespace Lab23
                                         if (PendingAck.ContainsKey(num))
                                             return;
                                     }
+
                                     //Resend
                                     await UdpClient.SendAsync(data, data.Length);
                                     _logger.LogError($"Packet #{num} sent error, resending.");
@@ -194,25 +194,19 @@ namespace Lab23
                 //Opens a new thread to send packets
                 Tasks.Add(Task.Run(async () =>
                 {
-
                     while (true)
                     {
                         //Wait until new window comes out
-                        while (CurrentReceiveWindowSize == 0)
-                        {
-                            await Task.Delay(10);
-                        }
+                        while (CurrentReceiveWindowSize == 0) await Task.Delay(10);
 
                         //Process the received data
                         for (byte i = 1; i <= CurrentReceiveWindowSize; i++)
                         {
                             byte[] value;
-                            while (!WaitingForConfirmReceive.TryGetValue(i, out value))
-                            {
-                                await Task.Delay(10);
-                            }
+                            while (!WaitingForConfirmReceive.TryGetValue(i, out value)) await Task.Delay(10);
                             PendingReceive.Enqueue(value[4..]);
                         }
+
                         //Switch window
                         CurrentReceiveNamespace = CurrentReceiveNamespace == 0 ? 1 : 0;
                         WaitingForConfirmReceive.Clear();
@@ -222,15 +216,13 @@ namespace Lab23
                 }));
             }
         }
-    
+
         public async Task<byte[]> ReceiveAsync()
         {
             byte[] result;
             while (!PendingReceive.TryDequeue(out result))
-            {
                 //Wait 1 ms to check receive result
                 await Task.Delay(10);
-            }
 
             return result;
         }
@@ -238,11 +230,7 @@ namespace Lab23
         public async ValueTask SendAsync(byte[] buffer)
         {
             //Wait until the queue can accept more
-            while (BufferFull)
-            {
-
-                await Task.Delay(10);
-            }
+            while (BufferFull) await Task.Delay(10);
 
             TransferCompleted = false;
             PendingSend.Enqueue(buffer);
